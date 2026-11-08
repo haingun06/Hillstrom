@@ -1,0 +1,26 @@
+{
+  "RF": {
+    "strategy": "Không xử lý",
+    "cv_ap_mean": 0.025071224913281603,
+    "cv_ap_std": 0.004890808630192042,
+    "cv_roc_mean": 0.6586315829156824,
+    "best_params": {
+      "n_estimators": 300,
+      "min_samples_leaf": 50,
+      "max_features": 0.5,
+      "max_depth": 6
+    }
+  },
+  "GB": {
+    "strategy": "class_weight",
+    "cv_ap_mean": 0.024075282255033036,
+    "cv_ap_std": 0.004445412978150166,
+    "cv_roc_mean": 0.659020554672281,
+    "best_params": {
+      "subsample": 0.7,
+      "n_estimators": 100,
+      "max_depth": 2,
+      "learning_rate": 0.03
+    }
+  }
+}

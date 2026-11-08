@@ -1,0 +1,38 @@
+{
+  "LR": {
+    "strategy": "class_weight",
+    "cv_ap": 0.015196572709813139,
+    "best_params_FS1": {
+      "C": 10
+    }
+  },
+  "DT": {
+    "strategy": "Không xử lý",
+    "cv_ap": 0.018529099727277232,
+    "best_params_FS1": {
+      "criterion": "gini",
+      "max_depth": 6,
+      "min_samples_leaf": 400
+    }
+  },
+  "RF": {
+    "strategy": "Không xử lý",
+    "cv_ap": 0.026187818606481856,
+    "best_params_FS1": {
+      "n_estimators": 300,
+      "min_samples_leaf": 100,
+      "max_features": "sqrt",
+      "max_depth": 6
+    }
+  },
+  "GB": {
+    "strategy": "class_weight",
+    "cv_ap": 0.02301974816414686,
+    "best_params_FS1": {
+      "subsample": 0.7,
+      "n_estimators": 100,
+      "max_depth": 2,
+      "learning_rate": 0.03
+    }
+  }
+}

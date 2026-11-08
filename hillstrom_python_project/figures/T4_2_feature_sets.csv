@@ -1,0 +1,12 @@
+﻿Đặc trưng,Có trong FS1,Có trong FS1P,Có trong FS2
+recency,True,True,True
+log_history,True,True,True
+mens,True,True,True
+womens,True,True,True
+zip_code,True,True,True
+newbie,True,True,True
+channel,True,True,True
+segment,False,True,True
+promo_match,False,True,True
+both_gender,False,False,True
+recency_group,False,False,True

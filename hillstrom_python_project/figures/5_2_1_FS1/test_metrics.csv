@@ -1,0 +1,3 @@
+﻿Feature_set,Model,Threshold,Test_AUC_ROC,Test_Average_Precision_AUC_PR,Test_Precision,Test_Recall,Test_F1,Test_Accuracy,Test_positive_rate,CV_AP_mean,CV_AP_std,Best_params
+FS1,LR,0.5,0.5822770992273826,0.013898335850927136,0.0,0.0,0.0,0.9899025069637883,0.0100974930362117,0.015233177243209457,0.0026196638088645118,"{""model__C"": 1.0, ""model__class_weight"": null, ""model__l1_ratio"": 0.0}"
+FS1,DT,0.5,0.605553795165379,0.01503035566693297,0.0,0.0,0.0,0.9899025069637883,0.0100974930362117,0.01821429190646303,0.0031405090613638876,"{""model__class_weight"": null, ""model__criterion"": ""gini"", ""model__max_depth"": 5, ""model__min_samples_leaf"": 200}"

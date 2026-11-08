@@ -1,0 +1,31 @@
+{
+  "model": "RF",
+  "strategy": "Không xử lý",
+  "features": [
+    "recency",
+    "log_history",
+    "mens",
+    "womens",
+    "zip_code",
+    "newbie",
+    "channel",
+    "segment",
+    "promo_match",
+    "both_gender",
+    "recency_group"
+  ],
+  "target": "conversion",
+  "threshold_f2_oof": 0.01989727229814113,
+  "cv_ap_mean": 0.025071224913281603,
+  "cv_ap_std": 0.004890808630192042,
+  "best_params": {
+    "n_estimators": 300,
+    "min_samples_leaf": 50,
+    "max_features": 0.5,
+    "max_depth": 6
+  },
+  "seed": 42,
+  "sklearn_version": "1.9.1",
+  "train_rows": 45950,
+  "test_rows": 11488
+}
