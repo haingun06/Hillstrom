@@ -1,5 +1,0 @@
-﻿Mô hình,Chiến lược được chọn,CV AP,± std,Các chiến lược nằm trong 1 SD của tốt nhất,Test PR-AUC,Test ROC-AUC,Lift@10%,Best_params
-LR,class_weight,0.015196572709813139,0.002321509854342798,"Không xử lý, class_weight, SMOTENC",0.014045547778990811,0.5877578929494099,1.3790702559947179,"{""C"": 10}"
-DT,Không xử lý,0.018529099727277232,0.0036772656888644996,"Không xử lý, class_weight, SMOTENC",0.016136274941573107,0.6399425540043907,1.9824134929924073,"{""criterion"": ""gini"", ""max_depth"": 6, ""min_samples_leaf"": 400}"
-RF,Không xử lý,0.026187818606481856,0.010262890624481774,"Không xử lý, class_weight, SMOTENC",0.01706652822987261,0.6296329005300375,1.4652621469943878,"{""n_estimators"": 300, ""min_samples_leaf"": 100, ""max_features"": ""sqrt"", ""max_depth"": 6}"
-GB,class_weight,0.02301974816414686,0.0065211605092911325,"Không xử lý, class_weight, SMOTENC",0.015834317878712624,0.6153362159933048,1.2928783649950482,"{""subsample"": 0.7, ""n_estimators"": 100, ""max_depth"": 2, ""learning_rate"": 0.03}"
