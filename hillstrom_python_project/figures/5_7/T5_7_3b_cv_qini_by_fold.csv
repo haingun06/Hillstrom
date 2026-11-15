@@ -1,0 +1,21 @@
+﻿Base learner,Fold,Qini (fold)
+LR (tương tác T×x),1,0.0002309741905401141
+LR (tương tác T×x),2,0.0004993535007455135
+LR (tương tác T×x),3,0.0004167133307303258
+LR (tương tác T×x),4,0.0005733091450758949
+LR (tương tác T×x),5,-0.00045290659704336287
+Random Forest,1,0.0007063475669027557
+Random Forest,2,0.0003933297330559061
+Random Forest,3,0.0004741168087496365
+Random Forest,4,0.0009871946827367784
+Random Forest,5,8.614946289056684e-05
+Gradient Boosting,1,0.00040708042319625754
+Gradient Boosting,2,0.0006930446136928926
+Gradient Boosting,3,0.0011699208999310234
+Gradient Boosting,4,0.0008809982884181187
+Gradient Boosting,5,-0.00041819354957747167
+Mô hình phản hồi LR (chọn theo p̂),1,0.000227293392280779
+Mô hình phản hồi LR (chọn theo p̂),2,0.00015695234032513363
+Mô hình phản hồi LR (chọn theo p̂),3,-0.0006605722308909633
+Mô hình phản hồi LR (chọn theo p̂),4,0.0006336277387645506
+Mô hình phản hồi LR (chọn theo p̂),5,0.0005317333146304739

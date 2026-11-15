@@ -1,0 +1,7 @@
+PyQt6>=6.6,<7
+matplotlib>=3.8
+numpy>=1.26
+pandas>=2.1
+# scikit-learn PHẢI là 1.6.1 (bản Colab đã huấn luyện mô hình, ghi trong final_model_meta.json).
+scikit-learn==1.6.1
+joblib>=1.4

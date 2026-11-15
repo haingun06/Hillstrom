@@ -1,0 +1,21 @@
+{
+  "final_model": "LR",
+  "n_boot": 1000,
+  "thresholds_f2_oof_train": {
+    "LR": 0.01580342520286766,
+    "DT": 0.014583333333333334,
+    "RF": 0.1412583752618153,
+    "GB": 0.015392866112069177
+  },
+  "strategies": {
+    "LR": "Không xử lý",
+    "DT": "Không xử lý",
+    "RF": "SMOTENC",
+    "GB": "Không xử lý"
+  },
+  "strategy_consistent_with_5_3": true,
+  "test_n": 12800,
+  "test_positives": 116,
+  "dedup_test_n": 11488,
+  "dedup_test_positives": 116
+}

@@ -1,0 +1,52 @@
+{
+  "LR": {
+    "feature_set": "FS2",
+    "features": [
+      "recency",
+      "log_history",
+      "mens",
+      "womens",
+      "zip_code",
+      "newbie",
+      "channel",
+      "segment",
+      "promo_match",
+      "recency_group",
+      "both_gender"
+    ],
+    "imbalance_strategy": "Không xử lý",
+    "cv_ap_mean": 0.018623413434656032,
+    "cv_ap_std": 0.0016782942937927016,
+    "cv_roc_auc_mean": 0.632604389615783,
+    "best_params": {
+      "C": 0.01
+    },
+    "threshold_f2_oof": 0.01580342520286766
+  },
+  "DT": {
+    "feature_set": "FS2",
+    "features": [
+      "recency",
+      "log_history",
+      "mens",
+      "womens",
+      "zip_code",
+      "newbie",
+      "channel",
+      "segment",
+      "promo_match",
+      "recency_group",
+      "both_gender"
+    ],
+    "imbalance_strategy": "Không xử lý",
+    "cv_ap_mean": 0.014387026357175342,
+    "cv_ap_std": 0.0011049756132926534,
+    "cv_roc_auc_mean": 0.5999966212689107,
+    "best_params": {
+      "criterion": "gini",
+      "max_depth": 5,
+      "min_samples_leaf": 400
+    },
+    "threshold_f2_oof": 0.014583333333333334
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "LR": {
+    "strategy": "Không xử lý",
+    "cv_ap": 0.014922857382557447,
+    "best_params_FS1": {
+      "C": 0.01
+    }
+  },
+  "DT": {
+    "strategy": "Không xử lý",
+    "cv_ap": 0.012216783122202677,
+    "best_params_FS1": {
+      "criterion": "gini",
+      "max_depth": 6,
+      "min_samples_leaf": 50
+    }
+  },
+  "RF": {
+    "strategy": "SMOTENC",
+    "cv_ap": 0.015936849148037766,
+    "best_params_FS1": {
+      "n_estimators": 300,
+      "min_samples_leaf": 100,
+      "max_features": 0.5,
+      "max_depth": 10
+    }
+  },
+  "GB": {
+    "strategy": "Không xử lý",
+    "cv_ap": 0.016360576222440543,
+    "best_params_FS1": {
+      "subsample": 0.7,
+      "n_estimators": 100,
+      "max_depth": 2,
+      "learning_rate": 0.03
+    }
+  }
+}

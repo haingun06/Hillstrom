@@ -1,0 +1,10 @@
+﻿So sánh,Chỉ số,Δ (điểm đơn),Δ 95% CI (bootstrap ghép cặp),P(Δ ≤ 0),Kết luận
+LR − DT,ROC-AUC,0.08703505094661756,[0.0407; 0.1347],0.002,khác biệt (CI không chứa 0)
+LR − DT,PR-AUC,0.0032014501662109944,[0.00114; 0.00733],0.001,khác biệt (CI không chứa 0)
+LR − DT,Lift@10%,0.6896551724137931,[0.000; 1.273],0.029,chưa phân biệt được (CI chứa 0)
+LR − RF,ROC-AUC,0.043842568427233886,[0.0028; 0.0825],0.016,khác biệt (CI không chứa 0)
+LR − RF,PR-AUC,0.0018847959556782083,[-0.00030; 0.00569],0.05,chưa phân biệt được (CI chứa 0)
+LR − RF,Lift@10%,0.6034482758620692,[-0.091; 1.300],0.057,chưa phân biệt được (CI chứa 0)
+LR − GB,ROC-AUC,0.00500528768255426,[-0.0265; 0.0351],0.394,chưa phân biệt được (CI chứa 0)
+LR − GB,PR-AUC,0.00040356457869708713,[-0.00124; 0.00444],0.289,chưa phân biệt được (CI chứa 0)
+LR − GB,Lift@10%,0.0,[-0.657; 0.611],0.552,chưa phân biệt được (CI chứa 0)

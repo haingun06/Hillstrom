@@ -1,0 +1,116 @@
+{
+  "treatment_definition": "T=1: Mens/Womens E-Mail; T=0: No E-Mail",
+  "evaluation": "Chọn base learner bằng Qini 5-fold OOF trên train; test dùng một lần",
+  "features": [
+    "recency",
+    "log_history",
+    "mens",
+    "womens",
+    "zip_code",
+    "newbie",
+    "channel",
+    "recency_group",
+    "both_gender"
+  ],
+  "base_learner": "Gradient Boosting",
+  "rf_params": {
+    "n_estimators": 300,
+    "max_depth": 6,
+    "min_samples_leaf": 100,
+    "max_features": "sqrt"
+  },
+  "gb_params": {
+    "n_estimators": 100,
+    "max_depth": 3,
+    "learning_rate": 0.03,
+    "subsample": 1.0
+  },
+  "cv_qini": [
+    {
+      "Base learner": "Gradient Boosting",
+      "Qini theo fold (mean)": 0.000547,
+      "Qini theo fold (std)": 0.000607,
+      "Qini OOF (gộp 5 fold)": 0.000496,
+      "Số fold Qini > 0": 4,
+      "τ̂ trung bình": 0.003456,
+      "Tỷ lệ τ̂ < 0": 0.043125,
+      "Được chọn": "✔"
+    },
+    {
+      "Base learner": "Random Forest",
+      "Qini theo fold (mean)": 0.000529,
+      "Qini theo fold (std)": 0.000339,
+      "Qini OOF (gộp 5 fold)": 0.000526,
+      "Số fold Qini > 0": 5,
+      "τ̂ trung bình": 0.002992,
+      "Tỷ lệ τ̂ < 0": 0.033262,
+      "Được chọn": ""
+    },
+    {
+      "Base learner": "LR (tương tác T×x)",
+      "Qini theo fold (mean)": 0.000253,
+      "Qini theo fold (std)": 0.000415,
+      "Qini OOF (gộp 5 fold)": 0.000262,
+      "Số fold Qini > 0": 4,
+      "τ̂ trung bình": 0.004653,
+      "Tỷ lệ τ̂ < 0": 0.058945,
+      "Được chọn": ""
+    },
+    {
+      "Base learner": "Mô hình phản hồi LR (chọn theo p̂)",
+      "Qini theo fold (mean)": 0.000178,
+      "Qini theo fold (std)": 0.00051,
+      "Qini OOF (gộp 5 fold)": 0.000172,
+      "Số fold Qini > 0": 4,
+      "τ̂ trung bình": NaN,
+      "Tỷ lệ τ̂ < 0": NaN,
+      "Được chọn": ""
+    }
+  ],
+  "ate_train": 0.004759387815410037,
+  "ate_train_ci": [
+    0.0032647801326630677,
+    0.006428342851537672
+  ],
+  "tau_mean_oof": 0.0034563963870961178,
+  "qini_oof": {
+    "S-learner": 0.0004956240282872686,
+    "Mô hình phản hồi LR (chọn theo p̂)": 0.00017203674109783613,
+    "Ngẫu nhiên": 0.0002552871969042834
+  },
+  "qini_diff_oof": {
+    "mean": 0.0003203656887130237,
+    "ci_low": -0.00030053317560388643,
+    "ci_high": 0.0010151418158703316,
+    "P(diff<=0)": 0.166
+  },
+  "decile_spearman": {
+    "rho": 0.43030303030303024,
+    "p": 0.21449233253280775
+  },
+  "tier_cutoffs": {
+    "A (τ̂ ≥)": 0.004334456112079859,
+    "B (τ̂ ≥)": 0.002930958240832041,
+    "C (τ̂ ≥)": 0.0016219034579267582
+  },
+  "max_abs_smd": 0.014430099265812098,
+  "ate_test": 0.005739928408063156,
+  "ate_test_ci": [
+    0.0027889410668476373,
+    0.008920532635215314
+  ],
+  "qini_test": {
+    "S-learner": -4.0332305350959686e-05,
+    "Mô hình phản hồi LR (chọn theo p̂)": -4.103109700142906e-05,
+    "Ngẫu nhiên": -0.0005423547332182004
+  },
+  "qini_diff_test": {
+    "mean": 6.032207819575773e-06,
+    "ci_low": -0.0012908583939589596,
+    "ci_high": 0.0013804881384953127,
+    "P(diff<=0)": 0.502
+  },
+  "seed": 42,
+  "n_boot": 1000,
+  "sklearn_version": "1.6.1"
+}
