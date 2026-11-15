@@ -23,9 +23,8 @@ from PyQt6.QtWidgets import (
     QScrollBar, QStyledItemDelegate, QWidget,
 )
 
-from ui_theme import MOTION, T, icon
+from .theme import MOTION, T, icon
 
-ASSETS = Path(__file__).resolve().parent / 'assets'
 
 EASE_OUT = QEasingCurve.Type.OutCubic
 EASE_IN_OUT = QEasingCurve.Type.InOutCubic

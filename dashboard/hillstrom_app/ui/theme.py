@@ -20,7 +20,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QFont, QIcon, QImage, QPainter, QPalette, QPixmap
 from PyQt6.QtWidgets import QApplication
 
-ASSETS = Path(__file__).resolve().parent / 'assets'
+from ..paths import ICONS_DIR as ASSETS   # assets/icons/
 
 # ---------------------------------------------------------------- tokens ---
 T = {

@@ -1,0 +1,23 @@
+[project]
+name = "hillstrom-dashboard"
+version = "1.0.0"
+description = "Hillstrom Campaign Studio - dự đoán mua hàng và mô phỏng chiến dịch email (PyQt6)"
+readme = "README.md"
+# scikit-learn 1.6.1 (bản đã huấn luyện mô hình) chỉ có bộ cài sẵn cho Python <= 3.13;
+# numpy 2.5 cần Python >= 3.12. uv tự tải đúng bản Python ghi trong .python-version.
+requires-python = ">=3.12,<3.14"
+# Khóa đúng bộ thư viện đã kiểm thử. Phiên bản chính xác của mọi gói (kể cả gói phụ thuộc)
+# nằm trong uv.lock.
+dependencies = [
+    "PyQt6==6.12.1",
+    "PyQt6-Qt6==6.12.0",
+    "matplotlib==3.11.2",
+    "numpy==2.5.4",
+    "pandas==3.1.1",
+    "scikit-learn==1.6.1",   # PHẢI là 1.6.1: bản Colab đã huấn luyện final_model_FS2.joblib
+    "joblib==1.6.0",
+]
+
+[tool.uv]
+# Đây là ứng dụng, không phải thư viện để đóng gói.
+package = false
