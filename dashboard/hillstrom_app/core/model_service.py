@@ -11,10 +11,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
-MODEL_PATH = ROOT / 'final_model_FS2.joblib'
-DATA_PATH = ROOT / 'hillstrom.csv'
-META_PATH = ROOT / 'final_model_meta.json'
+from ..paths import DATA_CSV as DATA_PATH, MODEL_FILE as MODEL_PATH, MODEL_META as META_PATH
 # Thứ tự 11 biến FS2 đúng như common.py của pipeline (FS1P + recency_group + both_gender).
 FS2 = ['recency', 'log_history', 'mens', 'womens', 'zip_code', 'newbie', 'channel',
        'segment', 'promo_match', 'recency_group', 'both_gender']
@@ -35,7 +32,7 @@ SEGMENTS = ('Mens E-Mail', 'Womens E-Mail')
 @lru_cache(maxsize=1)
 def get_model():
     if not MODEL_PATH.is_file():
-        raise FileNotFoundError('Thiếu final_model_FS2.joblib: chép từ models/ của pipeline vào thư mục Dashboard.')
+        raise FileNotFoundError(f'Thiếu mô hình: {MODEL_PATH}. Chép final_model_FS2.joblib từ pipeline vào thư mục models/.')
     # Only load the trusted model exported by the user's own training workflow.
     model = joblib.load(MODEL_PATH)
     if not hasattr(model, 'predict_proba'):
@@ -92,7 +89,7 @@ def predict_customer(form: dict) -> dict:
 @lru_cache(maxsize=1)
 def simulation_data():
     if not DATA_PATH.is_file():
-        raise FileNotFoundError('Thiếu hillstrom.csv trong thư mục web.')
+        raise FileNotFoundError(f'Thiếu dữ liệu: {DATA_PATH}. Chép hillstrom.csv vào thư mục data/.')
     df = pd.read_csv(DATA_PATH)
     cols = ['recency', 'history_segment', 'history', 'mens', 'womens', 'zip_code',
             'newbie', 'channel', 'segment', 'visit', 'conversion', 'spend']

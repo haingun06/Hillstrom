@@ -2,26 +2,24 @@ import re
 import sys
 from pathlib import Path
 
-from model_service import predict_customer as predict_engine, simulate as simulate_engine
+from ..core.model_service import predict_customer as predict_engine, simulate as simulate_engine
 
 from PyQt6.QtCore import Qt, QSize, QLocale, QTimer
 from PyQt6.QtGui import QIcon, QValidator
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QMainWindow, QFrame, QLabel, QPushButton, QVBoxLayout,
     QHBoxLayout, QGridLayout, QScrollArea, QAbstractSpinBox, QSpinBox,
-    QDoubleSpinBox, QSlider, QMessageBox, QProgressBar
+    QDoubleSpinBox, QSlider, QProgressBar
 )
 
-from ui_theme import T, apply_light_theme, asset_url, qss
-from ui_theme import icon as theme_icon
-from motion import (
+from .theme import T, apply_light_theme, asset_url, qss
+from .dialogs import show_error, show_info
+from .theme import icon as theme_icon
+from .motion import (
     CountUp, ElevatedFrame, HoverGlow, NavButton, NavIndicator, PolishedComboBox, SmoothScroller,
     animate_value, fade_in,
 )
 
-BASE_DIR = Path(__file__).resolve().parent
-ASSETS = BASE_DIR / 'assets'
-ASSETS_URL = ASSETS.as_posix()
 
 
 def icon(name, tone='emerald'):
@@ -105,8 +103,24 @@ class _FriendlySpinMixin:
         except ValueError:
             return None
 
+    # ---- trạng thái trống ("--"): giá trị = real_min - 1, hiển thị bằng specialValueText
+    def real_min(self):
+        return getattr(self, '_real_min', self.minimum())
+
+    def is_empty(self):
+        return self.value() < self.real_min()
+
+    def _is_empty_text(self, text):
+        return bool(self.specialValueText()) and text.strip() == self.specialValueText()
+
     def validate(self, text, pos):
+        if self._is_empty_text(text):
+            # "--" là trạng thái trống; QDoubleSpinBox mặc định hiểu "-" là dấu âm và đổi thành 0.
+            return QValidator.State.Acceptable, text, pos
         fixed = self._normalise(text)
+        parsed = self._parse(fixed)
+        if parsed is not None and parsed < self.real_min():
+            return QValidator.State.Intermediate, fixed, pos   # fixup() đưa lên mức tối thiểu
         state, out, new_pos = super().validate(fixed, pos)
         if state == QValidator.State.Invalid and self._NUMERIC.match(self._core(fixed)) \
                 and len(self._core(fixed)) <= 12:
@@ -117,13 +131,17 @@ class _FriendlySpinMixin:
     def fixup(self, text):
         v = self._parse(text)
         if v is None:
+            if self.specialValueText():
+                return self.specialValueText()    # xóa hết số -> ô trở về trống "--"
             return self.textFromValue(self.value()) + self.suffix()
-        v = min(max(v, self.minimum()), self.maximum())
+        v = min(max(v, self.real_min()), self.maximum())
         if isinstance(self, QSpinBox):
             v = int(round(v))
         return self.prefix() + self.textFromValue(v) + self.suffix()
 
     def valueFromText(self, text):
+        if self._is_empty_text(text):
+            return self.minimum()
         return super().valueFromText(self._normalise(text))
 
     def _caret_only(self):
@@ -134,7 +152,10 @@ class _FriendlySpinMixin:
 
     def focusInEvent(self, event):
         super().focusInEvent(event)
-        QTimer.singleShot(0, self._caret_only)     # Tab vào ô: chỉ hiện dấu nháy
+        if self.is_empty():
+            QTimer.singleShot(0, self.lineEdit().clear)   # ô trống: gõ số mới, không dính "--"
+        else:
+            QTimer.singleShot(0, self._caret_only)        # Tab vào ô: chỉ hiện dấu nháy
 
     def keyPressEvent(self, event):
         super().keyPressEvent(event)
@@ -142,7 +163,11 @@ class _FriendlySpinMixin:
             self._caret_only()                      # Qt bôi chọn sau Enter -> bỏ
 
     def stepBy(self, steps):
-        super().stepBy(steps)
+        if self.is_empty():
+            self.setValue(self.real_min())              # ô trống + / − -> bắt đầu từ mức tối thiểu
+        else:
+            target = self.value() + steps * self.singleStep()
+            self.setValue(min(max(target, self.real_min()), self.maximum()))   # không lùi về "--"
         le = self.lineEdit()
         le.deselect()                               # Qt bôi chọn sau khi tăng/giảm -> bỏ
         if self.hasFocus():
@@ -204,7 +229,10 @@ class NumberField(QWidget):
         self.spin.setLocale(QLocale(QLocale.Language.Vietnamese, QLocale.Country.Vietnam))
         self.spin.setKeyboardTracking(False)
         self.spin.setCorrectionMode(QAbstractSpinBox.CorrectionMode.CorrectToNearestValue)
-        self.spin.setRange(minimum, maximum)
+        # Thêm 1 nấc dưới mức tối thiểu làm trạng thái "trống" (hiển thị "--" sau khi Làm mới).
+        self.spin._real_min = minimum
+        self.spin.setRange(minimum - 1, maximum)
+        self.spin.setSpecialValueText(EMPTY_TEXT)
         self.spin.setSingleStep(step)
         self.spin.setValue(value)
         self.spin.setSuffix(suffix)
@@ -248,10 +276,14 @@ class NumberField(QWidget):
         self.spin.lineEdit().deselect()
 
     def value(self):
-        return self.spin.value()
+        """Giá trị số, hoặc None nếu ô đang trống ("--")."""
+        return None if self.spin.is_empty() else self.spin.value()
 
     def setValue(self, value):
-        self.spin.setValue(value)
+        self.spin.setValue(self.spin.minimum() if value is None else value)
+
+    def clear(self):
+        self.setValue(None)
 
 
 class Field(QWidget):
@@ -263,11 +295,33 @@ class Field(QWidget):
         lay.addWidget(field_title(title))
         lay.addWidget(control)
         self.control = control
+        # Ô thực sự nhận viền đỏ (ô số nằm trong NumberField).
+        self.target = control.spin if hasattr(control, 'spin') else control
+        # Dòng chữ báo lỗi nhập liệu ngay dưới ô (ẩn khi không có lỗi).
+        self.error = label('', 'fieldError')
+        self.error.setWordWrap(True)
+        self.error.hide()
+        lay.addWidget(self.error)
+        lay.addStretch(1)   # luôn căn mép trên: ô cạnh ô có dòng báo lỗi không bị lệch xuống
+
+    def set_error(self, text=None):
+        self.error.setText(text or '')
+        self.error.setVisible(bool(text))
+        t = self.target
+        if bool(t.property('missing')) != bool(text):
+            t.setProperty('missing', bool(text))
+            t.style().unpolish(t)
+            t.style().polish(t)
+
+
+EMPTY_TEXT = '--'
+EMPTY_CHOICE = '-- Chưa chọn --'
 
 
 def combo(items):
     w = NoWheelComboBox()
     w.addItems(items)
+    w.setPlaceholderText(EMPTY_CHOICE)   # hiển thị khi chưa chọn (currentIndex = -1)
     w.setMinimumHeight(42)
     w.setCursor(Qt.CursorShape.PointingHandCursor)
     return w
@@ -386,7 +440,7 @@ class CampaignPredictionPage(QWidget):
             self.nav_buttons.append(nav)
         self.nav_buttons[0].setChecked(True)
         for b in self.nav_buttons[1:]:
-            b.clicked.connect(lambda checked=False: QMessageBox.information(self, 'Ứng dụng chung', 'Trang này sẽ do nhóm tích hợp trong Chương 6.'))
+            b.clicked.connect(lambda checked=False: show_info(self, 'Ứng dụng chung', 'Trang này sẽ do nhóm tích hợp trong Chương 6.'))
         # Khối nền trượt theo mục đang chọn (chuyển động thay cho đổi màu tức thì).
         self.nav_indicator = NavIndicator(self.nav_buttons, sidebar)
         sb.addStretch()
@@ -441,7 +495,13 @@ class CampaignPredictionPage(QWidget):
         SmoothScroller.register(scroll)
         root.addWidget(scroll, 1)
 
+    def _field(self, key, title, control):
+        f = Field(title, control)
+        self.form_fields[key] = f
+        return f
+
     def make_form(self):
+        self.form_fields = {}
         box = card('customerCard')
         lay = QVBoxLayout(box)
         lay.setContentsMargins(22, 20, 22, 22)
@@ -457,13 +517,13 @@ class CampaignPredictionPage(QWidget):
         self.mens = combo(['Có', 'Không'])
         self.womens = combo(['Không', 'Có'])
         self.newbie = combo(['Không', 'Có'])
-        grid.addWidget(Field('Recency · Lần mua gần nhất (1–12 tháng)', self.recency), 0, 0, 1, 3)
-        grid.addWidget(Field('History · Chi tiêu lịch sử (USD)', self.history), 0, 3, 1, 3)
-        grid.addWidget(Field('Channel · Kênh mua hàng', self.channel), 1, 0, 1, 3)
-        grid.addWidget(Field('Zip Code · Khu vực', self.zip), 1, 3, 1, 3)
-        grid.addWidget(Field('Mens · Mua hàng nam', self.mens), 2, 0, 1, 2)
-        grid.addWidget(Field('Womens · Mua hàng nữ', self.womens), 2, 2, 1, 2)
-        grid.addWidget(Field('Newbie · KH mới', self.newbie), 2, 4, 1, 2)
+        grid.addWidget(self._field('Recency', 'Recency · Lần mua gần nhất (1–12 tháng)', self.recency), 0, 0, 1, 3)
+        grid.addWidget(self._field('History', 'History · Chi tiêu lịch sử (USD)', self.history), 0, 3, 1, 3)
+        grid.addWidget(self._field('Channel', 'Channel · Kênh mua hàng', self.channel), 1, 0, 1, 3)
+        grid.addWidget(self._field('Zip Code', 'Zip Code · Khu vực', self.zip), 1, 3, 1, 3)
+        grid.addWidget(self._field('Mens', 'Mens · Mua hàng nam', self.mens), 2, 0, 1, 2)
+        grid.addWidget(self._field('Womens', 'Womens · Mua hàng nữ', self.womens), 2, 2, 1, 2)
+        grid.addWidget(self._field('Newbie', 'Newbie · KH mới', self.newbie), 2, 4, 1, 2)
         lay.addLayout(grid)
         lay.addStretch(1)
         actions = QHBoxLayout()
@@ -648,20 +708,49 @@ class CampaignPredictionPage(QWidget):
         super().resizeEvent(event)
         self._update_responsive_layout()
 
+    MSG_EMPTY_NUMBER = 'Vui lòng nhập giá trị.'
+    MSG_EMPTY_CHOICE = 'Vui lòng chọn một giá trị.'
+    MSG_NO_GENDER = 'Cần chọn “Có” ở Mens hoặc Womens.'
+
+    def _form_errors(self):
+        """Kiểm tra form khách hàng; trả về {tên ô: thông báo lỗi}."""
+        errors = {}
+        for key, field in self.form_fields.items():
+            if isinstance(field.control, NumberField):
+                if field.control.value() is None:
+                    errors[key] = self.MSG_EMPTY_NUMBER
+            elif field.control.currentIndex() < 0:
+                errors[key] = self.MSG_EMPTY_CHOICE
+        if ('Mens' not in errors and 'Womens' not in errors
+                and self.mens.currentText() == 'Không' and self.womens.currentText() == 'Không'):
+            errors['Mens'] = errors['Womens'] = self.MSG_NO_GENDER
+        return errors
+
+    def _clear_field_error(self, key):
+        self.form_fields[key].set_error(None)
+        if key in ('Mens', 'Womens'):   # lỗi "chọn Có ở Mens hoặc Womens" thuộc về cả hai ô
+            for k in ('Mens', 'Womens'):
+                if self.form_fields[k].error.text() == self.MSG_NO_GENDER:
+                    self.form_fields[k].set_error(None)
+
     def reset_form(self):
-        self.recency.setValue(6)
-        self.history.setValue(242.09)
-        self.channel.setCurrentText('Multichannel')
-        self.zip.setCurrentText('Urban')
-        self.mens.setCurrentText('Có')
-        self.womens.setCurrentText('Không')
-        self.newbie.setCurrentText('Không')
+        # Làm mới: ô số hiển thị "--", dropdown hiển thị "-- Chưa chọn --".
+        self.recency.clear()
+        self.history.clear()
+        for box in (self.channel, self.zip, self.mens, self.womens, self.newbie):
+            box.setCurrentIndex(-1)
+        for field in self.form_fields.values():
+            field.set_error(None)
         self._clear_prediction()
         self.recommendation_message.setText('Chưa có khuyến nghị')
-        self.recommendation_detail.setText('Nhấn XEM DỰ ĐOÁN để tính xác suất theo từng loại email.')
+        self.recommendation_detail.setText('Nhập đầy đủ thông tin khách hàng rồi nhấn XEM DỰ ĐOÁN.')
 
     def connect_changes(self):
         """Không để kết quả cũ xuất hiện sau khi đầu vào thay đổi."""
+        # Nhập / chọn lại thì bỏ viền đỏ và dòng báo lỗi của ô đó.
+        for key, field in self.form_fields.items():
+            sig = field.target.valueChanged if isinstance(field.control, NumberField) else field.control.currentIndexChanged
+            sig.connect(lambda *_a, k=key: self._clear_field_error(k))
         for control in (self.recency, self.history):
             control.spin.valueChanged.connect(self.invalidate_prediction)
         for control in (self.channel, self.zip, self.mens, self.womens, self.newbie):
@@ -669,6 +758,8 @@ class CampaignPredictionPage(QWidget):
         self.top_slider.valueChanged.connect(self.invalidate_simulation)
         for control in (self.cost, self.aov, self.margin):
             control.spin.valueChanged.connect(self.invalidate_simulation)
+        for f in self._sim_fields:
+            f.target.valueChanged.connect(lambda _v, f=f: f.set_error(None))
 
     def _clear_prediction(self):
         for c in (self.mens_card, self.womens_card):
@@ -705,16 +796,22 @@ class CampaignPredictionPage(QWidget):
         # vi-VN: dấu chấm phân cách hàng nghìn, dấu phẩy phân cách thập phân.
         return f'{value:,.{digits}f}'.replace(',', '#').replace('.', ',').replace('#', '.')
 
-    def _show_error(self, title, exc):
-        # Lỗi nhập liệu (ValueError) hiển thị như cảnh báo thân thiện; lỗi khác giữ tên lỗi để dễ gỡ.
-        if isinstance(exc, ValueError):
-            QMessageBox.warning(self, title, str(exc))
-        else:
-            QMessageBox.critical(self, title, f'{type(exc).__name__}: {exc}')
+    def _show_system_error(self, title, message, exc):
+        # Chỉ lỗi hệ thống (thiếu file mô hình / dữ liệu, lỗi thư viện…) mới hiện popup.
+        show_error(self, title, message, f'{type(exc).__name__}: {exc}')
 
     def predict_customer(self):
         for field in (self.recency, self.history):
             field.spin.interpretText()
+        errors = self._form_errors()
+        for key, field in self.form_fields.items():
+            field.set_error(errors.get(key))
+        if errors:
+            # Lỗi nhập liệu: chỉ báo tại ô (viền đỏ + dòng chữ), không popup.
+            self._clear_prediction()
+            self.recommendation_message.setText('Chưa thể dự đoán')
+            self.recommendation_detail.setText('Kiểm tra các ô được đánh dấu đỏ ở phần Thông tin khách hàng.')
+            return
         try:
             result = predict_engine(self._customer_form())
             pm, pw = float(result['mens']), float(result['womens'])
@@ -732,13 +829,29 @@ class CampaignPredictionPage(QWidget):
                 f"Chênh lệch xác suất: {self._format_number(result['difference_pp'])} điểm phần trăm "
                 '(xác suất dự đoán, không phải tác động gia tăng của email).'
             )
+        except ValueError as exc:
+            # Dữ liệu vào không hợp lệ theo mô hình -> báo ngay trong khung khuyến nghị.
+            self._clear_prediction()
+            self.recommendation_message.setText('Chưa thể dự đoán')
+            self.recommendation_detail.setText(str(exc))
         except Exception as exc:
             self.invalidate_prediction()
-            self._show_error('Không thể dự đoán', exc)
+            self._show_system_error('Không thể dự đoán',
+                                    'Đã xảy ra lỗi hệ thống khi chạy mô hình dự đoán. Kiểm tra file '
+                                    'models/final_model_FS2.joblib và phiên bản thư viện (chạy bằng run.bat).', exc)
 
     def run_simulation(self):
         for field in (self.cost, self.aov, self.margin):
             field.spin.interpretText()
+        missing = False
+        for f in self._sim_fields:
+            empty = f.control.value() is None
+            f.set_error(self.MSG_EMPTY_NUMBER if empty else None)
+            missing = missing or empty
+        if missing:
+            self.invalidate_simulation()
+            self.simulation_note.setText('Kiểm tra các ô được đánh dấu đỏ ở phần thông số mô phỏng.')
+            return
         try:
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             QApplication.processEvents()
@@ -757,9 +870,16 @@ class CampaignPredictionPage(QWidget):
                 'mua hàng cao hơn. Kết quả là ước tính theo mô hình và giả định chi phí, '
                 'không phản ánh lợi nhuận gia tăng do email.'
             )
+        except ValueError as exc:
+            self.invalidate_simulation()
+            self.simulation_note.setText(f'Chưa thể mô phỏng: {exc}')
         except Exception as exc:
             self.invalidate_simulation()
-            self._show_error('Không thể mô phỏng', exc)
+            QApplication.restoreOverrideCursor()
+            QApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
+            self._show_system_error('Không thể mô phỏng',
+                                    'Đã xảy ra lỗi hệ thống khi mô phỏng. Kiểm tra file data/hillstrom.csv, '
+                                    'models/final_model_FS2.joblib và phiên bản thư viện (chạy bằng run.bat).', exc)
         finally:
             QApplication.restoreOverrideCursor()
 
@@ -786,6 +906,7 @@ class CampaignPredictionPage(QWidget):
         QLabel[class="sectionTitle"] { color: @brand900; font-weight: 800; font-size: 16px; }
         QLabel[class="caption"] { color: @muted; font-size: 12px; }
         QLabel[class="fieldLabel"] { color: @ink2; font-weight: 700; font-size: 12px; }
+        QLabel[class="fieldError"] { color: @danger; font-size: 11px; font-weight: 600; padding-left: 2px; }
         /* ---------- inputs ---------- */
         QComboBox, QSpinBox[class="numberSpin"], QDoubleSpinBox[class="numberSpin"] {
             background: @surface; border: 1px solid @field; border-radius: 10px; padding: 0px 12px;
@@ -793,6 +914,7 @@ class CampaignPredictionPage(QWidget):
             selection-background-color: @brand100; selection-color: @ink; }
         QComboBox:hover, QSpinBox[class="numberSpin"]:hover, QDoubleSpinBox[class="numberSpin"]:hover { border: 1px solid @brand500; background: #FCFFFD; }
         QComboBox:focus, QSpinBox[class="numberSpin"]:focus, QDoubleSpinBox[class="numberSpin"]:focus { border: 2px solid @brand600; padding: 0px 11px; background: #FFFFFF; }
+        QComboBox[missing="true"], QSpinBox[missing="true"], QDoubleSpinBox[missing="true"] { border: 2px solid @danger; padding: 0px 11px; background: #FFF7F7; }
         QAbstractSpinBox::up-button, QAbstractSpinBox::down-button { width: 0px; border: 0; image: none; }
         QAbstractSpinBox::up-arrow, QAbstractSpinBox::down-arrow { image: none; width: 0px; height: 0px; }
         QComboBox::drop-down { subcontrol-origin: padding; subcontrol-position: center right; border: none; width: 30px; }

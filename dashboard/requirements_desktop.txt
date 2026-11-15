@@ -1,7 +1,11 @@
-PyQt6>=6.6,<7
-matplotlib>=3.8
-numpy>=1.26
-pandas>=2.1
+# Cách khuyến nghị: bấm đúp run.bat (Windows) / chạy `sh run.sh` (macOS, Linux) -> uv tự cài đúng mọi thứ.
+# File này chỉ dành cho ai muốn cài thủ công bằng pip. Cần Python 3.12 hoặc 3.13.
+# Phiên bản khóa giống pyproject.toml / uv.lock (bộ đã kiểm thử).
+PyQt6==6.12.1
+PyQt6-Qt6==6.12.0
+matplotlib==3.11.2
+numpy==2.5.4
+pandas==3.1.1
 # scikit-learn PHẢI là 1.6.1 (bản Colab đã huấn luyện mô hình, ghi trong final_model_meta.json).
 scikit-learn==1.6.1
-joblib>=1.4
+joblib==1.6.0

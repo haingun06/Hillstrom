@@ -4,28 +4,28 @@ import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from PyQt6.QtCore import Qt, QEvent, QSize, QTimer
+from PyQt6.QtCore import Qt, QEvent, QRect, QSize, QTimer
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QFileDialog, QComboBox, QScrollArea, QStackedWidget,
-    QGridLayout, QTableWidget, QTableWidgetItem, QMessageBox, QSizePolicy, QHeaderView
+    QGridLayout, QTableWidget, QTableWidgetItem, QSizePolicy, QHeaderView
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter
 from matplotlib import rcParams
-from data_logic import (
+from ..core.data_logic import (
     LABELS, FILTERS, filtered, overview,
     group_stats, read_csv, conversion_by, data_quality
 )
-from ui_theme import MOTION, SERIES, T, apply_light_theme, asset_url, icon, qss
-from motion import CountUp, ElevatedFrame, HoverGlow, PolishedComboBox, SmoothScroller, crossfade
+from ..paths import DATA_CSV, DATA_DIR
+from .theme import MOTION, SERIES, T, apply_light_theme, asset_url, icon, qss
+from .dialogs import show_error, show_success
+from .motion import CountUp, ElevatedFrame, HoverGlow, PolishedComboBox, SmoothScroller, crossfade
 
 rcParams['font.family'] = ['Segoe UI', 'DejaVu Sans', 'sans-serif']
 
-BASE = Path(__file__).resolve().parent
-ASSETS = BASE / 'assets'
 # Bảng màu biểu đồ (đã kiểm tra phân biệt được với người mù màu, xem ui_theme.SERIES).
 # Màu gắn với từng nhóm, không đổi khi lọc: Email nam = emerald, Email nữ = indigo, Đối chứng = cam.
 CHART_COLORS = {'single':SERIES['Mens E-Mail'],'line':'#DCE5DA','grid':'#EDF2EC','muted':T['muted'],'ink':T['ink']}
@@ -51,7 +51,6 @@ QPushButton#SideButton:hover { background: rgba(255,255,255,0.08); color: white;
 QLabel#PageTitle { color: @brand900; font-size: 26px; font-weight: 800; }
 QLabel#Subtitle { color: @muted; font-size: 13px; }
 QLabel#FilterLabel { color: @ink2; font-size: 12px; font-weight: 700; }
-QLabel#ScopeStatic { color: @ink; font-size: 13px; font-weight: 700; padding: 0 4px; min-height: 38px; }
 QLabel#SourceChip { color: @brand800; background: @brand50; border: 1px solid @brand100; border-radius: 14px; padding: 5px 14px; font-size: 12px; font-weight: 700; }
 QLabel#SectionLabel { color: @brand800; font-size: 11px; font-weight: 800; letter-spacing: 2px; padding-left: 8px; }
 QPushButton#Primary { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 @brand700, stop:1 @brand600); color: white; border: 0px; padding: 0 20px; min-height: 40px; border-radius: 12px; font-size: 13px; font-weight: 800; }
@@ -166,10 +165,28 @@ def label(txt: str, name: str | None=None, wrap=False):
     return w
 
 
-def wrap_label(txt: str, name: str, lines: int = 2):
-    """Nhãn xuống dòng trong vùng cuộn: chừa sẵn chỗ cho `lines` dòng để chữ không bị cắt."""
-    w=label(txt,name,True)
-    w.setMinimumHeight(lines*w.fontMetrics().lineSpacing()+8)
+class AutoHeightLabel(QLabel):
+    """Nhãn xuống dòng trong vùng cuộn: chiều cao luôn vừa đúng số dòng chữ.
+
+    QScrollArea không tự tính chiều cao theo bề rộng cho nhãn xuống dòng, nên trước đây phải
+    giữ chỗ cố định 2 dòng (thừa khoảng trống khi chỉ có 1 dòng, cắt chữ khi có 3 dòng).
+    """
+    def _fit(self):
+        # Tự đo bằng QFontMetrics: QLabel.heightForWidth() trả về ~2 dòng kể cả khi chữ chỉ có 1 dòng.
+        m=self.contentsMargins()
+        avail=max(1,self.width()-m.left()-m.right())
+        text_h=self.fontMetrics().boundingRect(QRect(0,0,avail,100000),
+                                               int(Qt.TextFlag.TextWordWrap),self.text()).height()
+        h=text_h+m.top()+m.bottom()+2
+        if h!=self.minimumHeight():self.setMinimumHeight(h);self.setMaximumHeight(h)
+    def resizeEvent(self, e):
+        super().resizeEvent(e);self._fit()
+    def setText(self, text):
+        super().setText(text);self._fit()
+
+
+def wrap_label(txt: str, name: str):
+    w=AutoHeightLabel(txt);w.setObjectName(name);w.setWordWrap(True)
     w.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
     return w
 
@@ -307,7 +324,7 @@ class Dashboard(QMainWindow):
         self._idle_timer.timeout.connect(self._idle_step)
         self.setStyleSheet(APP_STYLE)
         self.construct()
-        default=BASE/'hillstrom.csv'
+        default=DATA_CSV
         if default.is_file():
             self.load_path(default, silent=True)
         else:
@@ -352,7 +369,8 @@ class Dashboard(QMainWindow):
             top.addWidget(b, alignment=Qt.AlignmentFlag.AlignTop)
         top.setSpacing(10)
         ml.addLayout(top)
-        controls = QHBoxLayout();controls.setSpacing(10);controls.setContentsMargins(8,0,8,0)
+        self.controls_row=QWidget()
+        controls = QHBoxLayout(self.controls_row);controls.setSpacing(10);controls.setContentsMargins(8,0,8,0)
         self.filter_label = label('Phạm vi phân tích', 'FilterLabel')
         controls.addWidget(self.filter_label)
         self.filter=PolishedComboBox();self.filter.addItems(list(FILTERS))
@@ -360,14 +378,9 @@ class Dashboard(QMainWindow):
         self.filter.currentTextChanged.connect(lambda _value: crossfade(self.pages, self.refresh))
         self.filter.setCursor(Qt.CursorShape.PointingHandCursor)
         controls.addWidget(self.filter)
-        # Trang Chất lượng dữ liệu luôn kiểm tra toàn bộ dữ liệu gốc: thay dropdown bằng nhãn cố định.
-        self.scope_static=label('Tất cả khách hàng','ScopeStatic')
-        self.scope_static.setToolTip('Trang này luôn kiểm tra toàn bộ dữ liệu gốc, không áp dụng bộ lọc')
-        self.scope_static.hide()
-        controls.addWidget(self.scope_static)
         controls.addStretch()
         self.source=label('','SourceChip');controls.addWidget(self.source)
-        ml.addLayout(controls)
+        ml.addWidget(self.controls_row)
         ml.addSpacing(2)
         self.pages=QStackedWidget();ml.addWidget(self.pages,stretch=1)
         self.make_overview_page();self.make_eda_page();self.make_quality_page()
@@ -468,14 +481,15 @@ class Dashboard(QMainWindow):
         self.subtitle.setText(PAGE_INFO[index][1])
         # Trang chất lượng luôn kiểm tra toàn bộ dữ liệu gốc nên bộ lọc bị khóa (giữ vị trí để bố cục không nhảy).
         self.filter.setEnabled(self.df is not None)
-        self.filter.setVisible(index != 2)
-        self.scope_static.setVisible(index == 2)
+        # Trang Chất lượng dữ liệu luôn kiểm tra toàn bộ dữ liệu gốc: ẩn cả dòng phạm vi phân tích
+        # (tên nguồn dữ liệu được đưa vào câu tóm tắt của trang).
+        self.controls_row.setVisible(index != 2)
         self.export_btn.setVisible(index != 2)
 
 
 
     def pick_csv(self):
-        filepath,_=QFileDialog.getOpenFileName(self,'Chọn Hillstrom CSV',str(BASE),'CSV (*.csv);;All files (*)')
+        filepath,_=QFileDialog.getOpenFileName(self,'Chọn Hillstrom CSV',str(DATA_DIR),'CSV (*.csv);;All files (*)')
         if filepath:self.load_path(filepath)
 
     def load_path(self,path,silent=False):
@@ -484,11 +498,11 @@ class Dashboard(QMainWindow):
             self.df=df;self.csv_path=Path(path)
             self.filter.setEnabled(True)
             self.refresh()
-            if not silent:QMessageBox.information(self,'Nạp thành công',f'Đã đọc {fmt_int(len(df))} dòng từ:\n{path}')
+            if not silent:show_success(self,'Nạp dữ liệu thành công',f'Đã đọc {fmt_int(len(df))} dòng. Các trang phân tích đã được cập nhật.',str(path))
         except Exception as ex:
             self.df=None;self.csv_path=None
             self.refresh()
-            if not silent:QMessageBox.critical(self,'Không thể đọc CSV',str(ex))
+            if not silent:show_error(self,'Không thể đọc CSV','File được chọn không phải dữ liệu Hillstrom hợp lệ. Hãy chọn lại file hillstrom.csv.',str(ex))
 
     def refresh(self):
         if not hasattr(self,'kpis'):return
@@ -603,7 +617,8 @@ class Dashboard(QMainWindow):
             return
         self._quality_for=self.df
         rows,duplicates=data_quality(self.df)
-        self.quality_summary.setText(f'Kiểm tra toàn bộ dữ liệu gốc: {fmt_int(len(self.df))} dòng × {len(self.df.columns)} cột. ' +
+        source=f'Nguồn: {self.csv_path.name}. ' if self.csv_path is not None else ''
+        self.quality_summary.setText(source+f'Kiểm tra toàn bộ dữ liệu gốc: {fmt_int(len(self.df))} dòng × {len(self.df.columns)} cột. ' +
             f'Số dòng có nội dung giống hệt dòng khác: {fmt_int(duplicates)} (chỉ cảnh báo; không tự xóa).')
         self.quality_table.setRowCount(len(rows))
         for r, values in enumerate(rows):
@@ -619,7 +634,7 @@ class Dashboard(QMainWindow):
         self._flush_page(current)
         charts=self.overview_charts if current==0 else self.eda_charts if current==1 else []
         if not charts:return
-        target=QFileDialog.getExistingDirectory(self,'Chọn thư mục xuất các biểu đồ',str(BASE))
+        target=QFileDialog.getExistingDirectory(self,'Chọn thư mục xuất các biểu đồ',str(Path.home()))
         if not target:return
         from re import sub
         from unicodedata import normalize
@@ -630,8 +645,8 @@ class Dashboard(QMainWindow):
                 ascii_title=normalize('NFKD',title).encode('ascii','ignore').decode()
                 name=sub(r'[^a-zA-Z0-9_-]+','_',ascii_title.lower()).strip('_') or f'chart{i}'
                 plot.fig.savefig(str(Path(target)/f'{prefix}_{i:02d}_{name}.png'),dpi=170,bbox_inches='tight',facecolor='white')
-            QMessageBox.information(self,'Xuất thành công',f'Đã xuất {len(charts)} hình PNG vào:\n{target}')
-        except OSError as ex:QMessageBox.critical(self,'Xuất thất bại',str(ex))
+            show_success(self,'Xuất biểu đồ thành công',f'Đã lưu {len(charts)} hình PNG.',target)
+        except OSError as ex:show_error(self,'Không thể xuất biểu đồ','Không ghi được file vào thư mục đã chọn. Hãy chọn thư mục khác hoặc kiểm tra quyền ghi.',str(ex))
 
 
 def main():
