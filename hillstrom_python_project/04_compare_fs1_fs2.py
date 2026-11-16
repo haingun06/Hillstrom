@@ -1,21 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-04_compare_fs1_fs2.py - Mục 5.5: So sánh FS1 và FS2
-=====================================================
-Gộp kết quả test của 5.2-5.3 (FS1, chiến lược tốt nhất) và 5.4 (FS2, cùng chiến lược) vào một
-bảng chung và so sánh ROC-AUC, PR-AUC, Lift@10%, Lift@20% cho cả 4 mô hình (LR, DT, RF, GB).
-
-Vì FS1 và FS2 được chấm trên CÙNG tập test và cùng khách hàng, chênh lệch FS2 - FS1 được ước
-lượng bằng bootstrap ghép cặp 1.000 lần (cùng mẫu cho cả hai bộ đặc trưng).
-
-Đầu vào (đã có sau 02 và 03):
-    figures/test_scores_FS1_best.csv      (p_LR, p_DT, p_RF, p_GB trên FS1)
-    figures/FS2_LR_DT_test_scores.csv     (p_LR, p_DT trên FS2)
-    figures/test_scores_FS2.csv           (p_RF, p_GB trên FS2)
-    figures/T5_6_best_strategy_FS1.csv, figures/best_strategy_FS1.json, FS2_*.json
-Đầu ra: figures/5_5/
-Chạy từ thư mục gốc dự án sau 03_fs2_experiments.py.
-"""
 from pathlib import Path
 import os
 import sys

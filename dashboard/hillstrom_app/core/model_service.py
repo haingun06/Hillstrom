@@ -1,6 +1,3 @@
-"""Inference engine cho dashboard. Nạp mô hình cuối (5.9) do 06_final_model.py lưu.
-Không huấn luyện lại hay sửa pipeline đã lưu.
-"""
 from __future__ import annotations
 import json
 import math

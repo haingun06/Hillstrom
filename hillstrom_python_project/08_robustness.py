@@ -1,22 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-08_robustness.py - Mục 5.8: Kiểm tra độ bền
-=============================================
-Ba kiểm tra, áp dụng cho cả 4 mô hình FS2 của mục 5.4 (đặt mô hình cuối của 5.9 lên đầu):
-
-1. Bootstrap 1.000 lần trên tập test: khoảng tin cậy 95% cho ROC-AUC, PR-AUC, Lift@10% và F2
-   (ngưỡng F2 cố định, lấy từ OOF của train), cùng chênh lệch ghép cặp giữa mô hình cuối và từng
-   mô hình còn lại (cùng mẫu bootstrap).
-2. Phân nhóm trong tập test: toàn bộ, nhóm đã nhận email (Mens + Womens), từng loại email và nhóm
-   không nhận email (đối chứng). Dùng lại mô hình đã huấn luyện, không huấn luyện lại.
-3. Độ nhạy với bản ghi trùng lặp: mẫu chính (64.000 dòng) giữ nguyên bản ghi trùng vì dữ liệu không
-   có mã khách hàng để xác nhận trùng thật; ở đây huấn luyện lại 4 mô hình (cùng siêu tham số và chiến
-   lược) trên bản đã loại 6.562 dòng trùng (train_deduplicated_sensitivity.csv) và chấm trên
-   test_deduplicated_sensitivity.csv (chia riêng, cùng seed), rồi so với kết quả mẫu chính.
-
-Ngưỡng F2 luôn chọn trên OOF của train (không chọn trên test như bản cũ).
-Chạy sau 06_final_model.py từ thư mục gốc dự án. Đầu ra: figures/5_8/.
-"""
 from pathlib import Path
 import os
 import sys

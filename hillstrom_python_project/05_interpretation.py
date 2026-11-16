@@ -1,23 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-05_interpretation.py - Mục 5.6: Độ quan trọng đặc trưng và diễn giải mô hình
-==========================================================================
-5.6.1  Logistic Regression: Odds Ratio (statsmodels.Logit) + VIF; Decision Tree diễn giải độ sâu 3-4.
-       FS2 là bộ chính, FS1 là bộ đối chiếu (cùng tập Train/Test, cùng quy tắc tiền xử lý).
-5.6.2  Random Forest (mô hình FS2 đã tinh chỉnh ở 5.4.2): impurity importance + permutation
-       importance trên tập test (đơn lẻ và theo nhóm đặc trưng tương quan).
-
-Khác với bản cũ (04_interpretation.py):
-    - FS2 có 11 biến (gồm both_gender); nhãn recency_group là '1-3m', '4-6m', '7-9m', '10-12m'.
-      both_gender = mens + womens - 1 nên mens, womens, both_gender phụ thuộc tuyến tính chính xác: VIF của
-      3 cột này là vô hạn (được ghi nhận), còn mô hình OR và cây DT dùng biến gender_profile
-      (Men only / Women only / Both, mức tham chiếu Men only) thay cho ba biến đó.
-    - Mô hình RF lấy từ models/RF_FS2_{chiến lược}.joblib theo chiến lược ghi trong figures/FS2_best_params.json.
-    - Không có nhánh "fallback" huấn luyện mô hình thay thế: thiếu file thì báo lỗi rõ ràng.
-
-Cần: statsmodels (OR, VIF). Chạy sau 03_fs2_experiments.py từ thư mục gốc dự án.
-Đầu ra: figures/5_6/ (tables/ cho CSV).
-"""
 from pathlib import Path
 import os
 import sys

@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-common.py - Hàm dùng chung cho các script 04-08 (mục 5.5-5.9).
-
-Nguyên tắc:
-- Không đặt cứng chiến lược mất cân bằng hay siêu tham số: đọc từ kết quả đã lưu của 5.3-5.4
-  (figures/best_strategy_FS1.json, figures/FS2_LR_DT_cv_summary.json, figures/FS2_best_params.json).
-- Mô hình FS2 đã huấn luyện ở 5.4 được nạp từ models/{MÔ HÌNH}_FS2_{chiến lược}.joblib.
-- Ngưỡng phân loại chỉ chọn trên dự đoán out-of-fold (OOF) của TRAIN; test dùng đúng một lần.
-"""
 from pathlib import Path
 import json
 import warnings

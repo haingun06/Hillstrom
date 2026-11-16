@@ -1,4 +1,3 @@
-"""Data/EDA logic for the Hillstrom dashboard. Independent of PyQt6 for testing."""
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path

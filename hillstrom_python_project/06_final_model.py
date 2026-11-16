@@ -1,17 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-06_final_model.py - Mục 5.9: Tổng kết mô hình
-===============================================
-- Nạp 4 mô hình FS2 đã tinh chỉnh ở 5.4 (LR, DT, RF, GB) theo đúng chiến lược mất cân bằng đã lưu.
-- Chọn mô hình cuối CHỈ dựa trên CV Average Precision trên train (không dùng test để chọn).
-- Ngưỡng F2 của từng mô hình lấy từ dự đoán out-of-fold trên train.
-- Lưu mô hình cuối (joblib), siêu dữ liệu, và CSV điểm dự đoán trên tập test.
-
-Đầu ra: models/final_model_FS2.joblib, figures/5_9/ (T5_9_summary_test.csv, final_model_meta.json,
-        test_predictions_final.csv, SQ3_draft.md).
-Mục 5.7 (uplift) dùng test_predictions_final.csv làm điểm của mô hình phản hồi nên cần chạy file này trước 07.
-Chạy sau 03_fs2_experiments.py từ thư mục gốc dự án.
-"""
 from pathlib import Path
 import os
 import sys

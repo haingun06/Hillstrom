@@ -1,7 +1,3 @@
-"""Mọi đường dẫn tới file dữ liệu / mô hình / icon của ứng dụng — chỉ khai báo ở đây.
-
-Muốn dời một thư mục, sửa đúng một dòng trong file này.
-"""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent      # thư mục Dashboard/

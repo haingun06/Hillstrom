@@ -1,35 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-07_uplift.py - Mục 5.7: Uplift modeling
-=========================================
-- Mô hình S-learner ước tính tác động của email khuyến mãi lên xác suất mua.
-- Đường Qini (Radcliffe, 2007) + hệ số Qini, khoảng tin cậy bootstrap 1.000 lần.
-- Chia khách hàng theo mức uplift (decile và 4 nhóm hành động).
-- Phân tích bổ sung: uplift riêng cho Mens E-Mail và Womens E-Mail.
-
-Chạy sau 06_final_model.py (cần data/processed/train.csv, test.csv; models/final_model_FS2.joblib và
-figures/5_9/final_model_meta.json - mô hình phản hồi để đối chiếu).
-
-Quy ước (theo mục 2.4.5):
-    T = 1 nếu khách nhận email (Mens E-Mail hoặc Womens E-Mail), T = 0 nếu No E-Mail.
-    τ̂(x) = μ̂(x, T=1) − μ̂(x, T=0), với μ̂ là MỘT mô hình duy nhất (S-learner).
-
-Thiết kế đánh giá:
-    - Chọn base learner và phân tích chính dùng dự đoán OUT-OF-FOLD (Stratified 5-fold, phân tầng
-      theo T × conversion, seed 42) trên TRAIN: mỗi khách được chấm bởi mô hình chưa từng thấy họ.
-      Cách này tận dụng toàn bộ người mua của nhóm đối chứng trong train.
-    - TEST dùng MỘT lần ở bước 8 để báo cáo; không lựa chọn gì dựa trên test (nhóm đối chứng trong
-      test chỉ có vài chục người mua nên đường Qini trên test rất nhiễu).
-    - segment và promo_match được sinh ra từ chính việc gửi email nên KHÔNG đưa vào x; thông tin
-      email nằm trong T. Ở phân tích theo loại email (bước 7), segment được đặt lần lượt về từng
-      giá trị và promo_match được tính lại tương ứng.
-    - Không dùng class_weight/SMOTE cho S-learner: uplift là HIỆU hai xác suất nên cần xác suất
-      không bị đẩy lệch (xem nhận xét Brier ở mục 5.3).
-    - Mô hình phản hồi để so sánh: mô hình cuối của mục 5.9, chấm out-of-fold trên cùng các fold. Điểm
-      xếp hạng là xác suất mua dự đoán nếu khách được gửi email (trung bình hai loại email), KHÔNG dùng
-      segment thực tế vì nó chính là biến điều trị.
-    - Bộ đặc trưng trước can thiệp (PRE) có 9 biến: FS2 (11 biến) bỏ segment và promo_match.
-"""
 from pathlib import Path
 import os
 import sys
